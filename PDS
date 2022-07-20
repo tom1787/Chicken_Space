@@ -1,0 +1,44 @@
+import pandas as pd
+import numpy as np
+from matplotlib import pyplot as plt
+locate="C:/Users/ASUS/Desktop/Kaggle/PDS/"
+
+train=pd.read_csv(locate+"Training.csv")
+test=pd.read_csv(locate+"Testing.csv")
+symptom=pd.read_csv("symptom_severity.csv")
+##symptom data Checked
+symptom1=symptom.copy()
+symptom1["Symptom"].loc[(symptom1["Symptom"]=="fluid_overload") & (symptom1["Symptom_severity"]==6)]="fluid_overload.1"
+symptom1["Symptom"].loc[(symptom1["Symptom"]=="dischromic_patches")]="dyschromic_patches"
+
+#count prognosis 
+print(len(set(train["prognosis"])))
+
+#disease severity range
+score=[]
+for i in range(len(train.index)):
+    row=pd.DataFrame(train.loc[i][train.loc[i]==1])
+    row=pd.DataFrame(row.T.columns)
+    row.columns=["Symptom"]
+    score.append(sum(pd.merge(symptom1,row,on="Symptom",how="right")["Symptom_severity"]))
+train['Severity']=score
+
+#Did not have Severity index disease
+train[train['Severity'].isna()]
+
+#Print about disease severity
+
+import seaborn as sns
+Severity_score=pd.DataFrame()
+
+Severity_score["prognosis"]=train["prognosis"]
+Severity_score["Severity"]=train["Severity"]
+Severity_score1=Severity_score.copy()
+
+#Consider prognosis  Severity>50 
+Severity_score1=Severity_score1[Severity_score1["Severity"]>50]
+
+sns.set(rc={'figure.figsize':(11.7,8.27)})
+sns.boxplot(x="prognosis",y="Severity",data=Severity_score1)
+
+plt.show()
