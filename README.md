@@ -1,5 +1,5 @@
-# Chicken_Space
-My personal introduction
+# Chicken Space
+Welcome to my GitHub profile!
 
 My name is Thomas, this is my project space.
 
