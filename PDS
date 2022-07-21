@@ -43,3 +43,33 @@ sns.set(rc={'figure.figsize':(11.7,8.27)})
 sns.boxplot(x="prognosis",y="Severity",data=Severity_score1)
 
 plt.show()
+
+#Predicted for NN
+import tensorflow as tf
+import numpy as np
+import pandas as pd
+from sklearn.preprocessing import LabelEncoder
+labelencoder = LabelEncoder()
+train["prognosis"] = labelencoder.fit_transform(train["prognosis"])
+test["prognosis"] = labelencoder.fit_transform(test["prognosis"])
+
+(x_train, y_train)=tf.expand_dims(train.drop(columns="prognosis"), axis=0),tf.expand_dims(train["prognosis"], axis=0)
+(x_test, y_test)=tf.expand_dims(test.drop(columns="prognosis"), axis=0),tf.expand_dims(test["prognosis"], axis=0)
+
+
+
+model = tf.keras.models.Sequential([
+  tf.keras.layers.Dense(135, activation='relu'),
+  tf.keras.layers.Dense(89, activation='relu'),
+  tf.keras.layers.Dense(66, activation='relu'),
+  tf.keras.layers.Dense(55, activation='relu'),
+  tf.keras.layers.Dense(43)
+])
+
+predictions = model(x_train[:1]).numpy()
+model.compile(optimizer='adam',
+              loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
+              metrics=['accuracy'])
+
+model.fit(x_train, y_train, epochs=100)
+model.evaluate(x_test,  y_test, verbose=2)
