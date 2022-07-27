@@ -1,0 +1,69 @@
+Data Sources:https://www.kaggle.com/datasets/ruchi798/data-science-job-salaries
+import pandas as pd
+import numpy as np
+import seaborn as sns
+import matplotlib.pyplot as plt
+salary=pd.read_csv("ds_salaries.csv")
+salary.head(5)
+
+salary.shape
+salary.columns
+
+#Check NULL
+salary.isnull().sum()
+
+#Describe table for variables and plot 
+variable={}
+for i in salary.columns:
+    variable[i]=salary[i].value_counts().shape
+pd.DataFrame(variable).transpose()
+
+#Drop serial number
+df = salary.drop(['Unnamed: 0'], axis =1)
+df.job_title.value_counts()
+
+#job title
+job_name=["Data Scientist","Data Engineer","Data Analyst","Machine Learning Engineer","Data Science Manager",
+         "Data Architect"]
+job_abbr=["DS","DE","DA","MLE","DSM","DA"]
+#Consider interesting job title 
+for i in range(len(job_name)):
+    df.loc[df.job_title.str.contains(job_name[i]),"new_job_title"]=job_abbr[i]
+
+df.new_job_title.isnull().sum()
+
+#Delete other job type
+df1=df[-df.new_job_title.isnull()]
+df1.shape
+
+#ISO 3166 Region  https://github.com/lukes/ISO-3166-Countries-with-Regional-Codes
+df1.employee_residence.value_counts()
+region=pd.read_csv("all.csv")
+df2=pd.merge(df,region[["alpha-2","region"]],left_on="employee_residence",right_on="alpha-2",how="left")
+
+df2.region.value_counts()
+
+# Salary comparison with other variables
+
+fig, axes = plt.subplots(2, 3,figsize=(18, 10))
+
+sns.boxplot(ax=axes[0,0], y=df2["salary_in_usd"]/1000, x=df2["work_year"]).set_ylabel("Salary per $1,000 (in U.S. dollars)")
+sns.boxplot(ax=axes[0,1], y=df2["salary_in_usd"]/1000, x=df2["experience_level"]).set_ylabel("")
+sns.boxplot(ax=axes[0,2], y=df2["salary_in_usd"]/1000, x=df2["employment_type"]).set_ylabel("")
+sns.boxplot(ax=axes[1,0], y=df2["salary_in_usd"]/1000, x=df2["remote_ratio"]).set_ylabel("Salary per $1,000 (in U.S. dollars)")
+sns.boxplot(ax=axes[1,1], y=df2["salary_in_usd"]/1000, x=df2["new_job_title"]).set_ylabel("")
+sns.boxplot(ax=axes[1,2], y=df2["salary_in_usd"]/1000, x=df2["region"]).set_ylabel("")
+
+plt.show()
+
+# Salary vs FT, Job, Region Comparison
+df3=df2[df2.employment_type=="FT"][["region","new_job_title","salary_in_usd"]]
+df3.salary_in_usd=df3.salary_in_usd/1000
+
+plt.figure(figsize =(50, 10))  
+g=sns.catplot(x="region", hue="new_job_title", y="salary_in_usd", data=df3, kind="box",palette="Set3",legend=False)
+plt.xlabel("Region")
+plt.ylabel("Salary per $1,000 (in U.S. dollars)")
+plt.legend(title='Job Title',loc='best',bbox_to_anchor=(1, 1))
+plt.show(g)
+
