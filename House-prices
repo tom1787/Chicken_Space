@@ -1,0 +1,233 @@
+Data Sources:https://www.kaggle.com/competitions/house-prices-advanced-regression-techniques
+import numpy as np
+import pandas as pd
+
+train = pd.read_csv("train.csv")
+test = pd.read_csv("test.csv")
+test_outcome = pd.DataFrame(pd.read_csv("sample_submission.csv"))
+
+train.columns
+train.shape
+
+#train 
+#Check NULL
+train.isnull().sum()[train.isnull().sum()!=0]
+
+#與房子相連接到直徑 (英尺)  fill with 0
+train.LotFrontage=train.LotFrontage.fillna(0)
+#通向道路類型  定義為None
+train.Alley=train.Alley.fillna("None")
+#磁磚類型 定義為None 磁磚面積 設定為0 
+train.MasVnrType=train.MasVnrType.fillna("None")
+train.MasVnrArea=train.MasVnrArea.fillna("0")
+#地下室資訊
+train.BsmtQual=train.BsmtQual.fillna("None")
+train.BsmtCond=train.BsmtCond.fillna("None")
+train.BsmtExposure=train.BsmtExposure.fillna("None")
+train.BsmtFinType1=train.BsmtFinType1.fillna("None")
+train.BsmtFinType2=train.BsmtFinType2.fillna("None")
+
+
+#壁爐質量
+train.FireplaceQu=train.FireplaceQu.fillna("None")
+
+#垃圾放置位置
+train.GarageType=train.GarageType.fillna("None")
+train.GarageYrBlt=train.GarageYrBlt.fillna("None")
+train.GarageFinish=train.GarageFinish.fillna("None")
+train.GarageQual=train.GarageQual.fillna("None")
+train.GarageCond=train.GarageCond.fillna("None")
+#泳池品質
+train.PoolQC=train.PoolQC.fillna("None")
+#圍欄質量
+train.Fence=train.Fence.fillna("None")
+#其他品質
+train.MiscFeature=train.MiscFeature.fillna("None")
+
+#電力系統 delete missing
+train=train.dropna()
+
+#不考慮垃圾建置年
+train=train.drop(['Id','GarageYrBlt'], axis=1)
+#年月 合併  考慮屋齡以改造日期為準  
+
+train["House_age"]=train["YrSold"]-train['YearRemodAdd']
+train["YearBuilt"]=train["YearBuilt"].astype(str)
+train["YearRemodAdd"]=train["YearRemodAdd"].astype(str)
+train["YrSold"]=train["YrSold"].astype(str)
+train["MoSold"]=train["MoSold"].astype(str)
+
+train=train.drop(["YearBuilt","YearRemodAdd","YrSold","MoSold"], axis=1)
+#變量屬性轉換
+train.dtypes
+train['MSSubClass']=train['MSSubClass'].astype(str)
+train['OverallQual']=train['OverallQual'].astype(str)
+train['OverallCond']=train['OverallCond'].astype(str)
+train['MasVnrArea']=train['MasVnrArea'].astype(int)
+
+
+#test 
+#Check NULL
+test.isnull().sum()[test.isnull().sum()!=0]
+
+#與房子相連接到直徑 (英尺)  fill with 0
+test.LotFrontage=test.LotFrontage.fillna(0)
+#通向道路類型  定義為None
+test.Alley=test.Alley.fillna("None")
+#磁磚類型 定義為None 磁磚面積 設定為0 
+test.MasVnrType=test.MasVnrType.fillna("None")
+test.MasVnrArea=test.MasVnrArea.fillna("0")
+#地下室資訊
+test.BsmtQual=test.BsmtQual.fillna("None")
+test.BsmtCond=test.BsmtCond.fillna("None")
+test.BsmtExposure=test.BsmtExposure.fillna("None")
+test.BsmtFinType1=test.BsmtFinType1.fillna("None")
+test.BsmtFinType2=test.BsmtFinType2.fillna("None")
+
+
+#壁爐質量
+test.FireplaceQu=test.FireplaceQu.fillna("None")
+
+#垃圾放置位置
+test.GarageType=test.GarageType.fillna("None")
+test.GarageYrBlt=test.GarageYrBlt.fillna("None")
+test.GarageFinish=test.GarageFinish.fillna("None")
+test.GarageQual=test.GarageQual.fillna("None")
+test.GarageCond=test.GarageCond.fillna("None")
+#泳池品質
+test.PoolQC=test.PoolQC.fillna("None")
+#圍欄質量
+test.Fence=test.Fence.fillna("None")
+#其他品質
+test.MiscFeature=test.MiscFeature.fillna("None")
+
+#電力系統 delete missing
+test=test.dropna()
+test_id_index=test["Id"]
+#不考慮垃圾建置年
+test=test.drop(['Id','GarageYrBlt'], axis=1)
+#年月 合併  考慮屋齡以改造日期為準  
+
+test["House_age"]=test["YrSold"]-test['YearRemodAdd']
+test["YearBuilt"]=test["YearBuilt"].astype(str)
+test["YearRemodAdd"]=test["YearRemodAdd"].astype(str)
+test["YrSold"]=test["YrSold"].astype(str)
+test["MoSold"]=test["MoSold"].astype(str)
+
+test=test.drop(["YearBuilt","YearRemodAdd","YrSold","MoSold"], axis=1)
+#變量屬性轉換
+test.dtypes
+test['MSSubClass']=test['MSSubClass'].astype(str)
+test['OverallQual']=test['OverallQual'].astype(str)
+test['OverallCond']=test['OverallCond'].astype(str)
+test['MasVnrArea']=test['MasVnrArea'].astype(int)
+
+
+test.shape
+
+#線性資訊  納入相關性>0.3的變項 進行後續建模預測
+Sales_corr=train[train.columns[np.logical_or(train.dtypes==np.int64 ,train.dtypes==np.float64)]].corr()["SalePrice"]
+linear=pd.DataFrame(Sales_corr[Sales_corr>0.3]).T
+linear_name=list(linear.columns)
+#類別  use linear model R^2 choose variable >0.3 choose
+import statsmodels.api as sm
+from sklearn.linear_model import LinearRegression
+Sales_table=train[train.columns[train.dtypes==np.object_]]
+category_name=[]
+lr=LinearRegression()
+for i in Sales_table.columns:
+    X=pd.get_dummies(Sales_table[i])
+    X1=np.array(X)
+    y=np.array(train.SalePrice)
+    lr.fit(X1,y)
+    r_squared = lr.score(X1, y)
+    if r_squared>0.3:
+        category_name.append(i)
+
+category_name
+#OverallQual test 資料無包含1  故考慮轉成連續進行預測
+#for i in category_name:
+#    print (train[i].value_counts())
+#    print (test[i].value_counts())
+
+category_name.remove('OverallQual')
+linear_name.append('OverallQual')
+linear_name
+category_name
+
+#DATA Process 
+train_data=pd.concat([train[linear_name], pd.get_dummies(data=train[category_name],columns=list(category_name))], axis=1)
+train_data1=train_data.copy()
+train_y=np.array(train_data['SalePrice']).ravel()
+train_x=np.array(train_data1.drop('SalePrice', axis = 1).copy(),dtype="int")
+index=linear_name.copy()
+index.remove('SalePrice')
+test_data=pd.concat([test[index], pd.get_dummies(data=test[category_name],columns=list(category_name))], axis=1)
+test_x=np.array(test_data,dtype="int")
+
+##Consider test_id_index
+test_y=np.array(pd.merge(test_id_index,test_outcome , how="left").SalePrice).ravel()
+
+
+
+pd.get_dummies(data=train[category_name],columns=list(category_name)).shape
+pd.get_dummies(data=test[category_name],columns=list(category_name)).shape
+
+test_x.shape
+
+
+#ensemble Random forest....
+from sklearn.ensemble import RandomForestRegressor
+rf = RandomForestRegressor(n_estimators = 1000, random_state = 666)
+rf.fit(train_x, train_y)
+DT_predict = rf.predict(test_x) #Predictions on Testing data
+
+MAE_Randomforest= np.mean(abs(DT_predict-test_y))
+MSE_Randomforest
+
+#DATA Process for NN train and test X ormalize
+from sklearn import preprocessing
+train_data1=pd.concat([pd.DataFrame(preprocessing.normalize(train[linear_name]),columns=linear_name), pd.get_dummies(data=train[category_name],columns=list(category_name))], axis=1)
+train_x1=np.array(train_data1.drop('SalePrice', axis = 1).copy(),dtype="int")
+
+#index 因刪除值有所變動
+test_category=pd.get_dummies(data=test[category_name],columns=list(category_name))
+test_category.index=range(len(test_data))
+test_data1=pd.concat([pd.DataFrame(preprocessing.normalize(test[index]),columns=index), test_category], axis=1)
+test_x1=np.array(test_data1,dtype="int")
+
+
+pd.DataFrame(preprocessing.normalize(test[index]),columns=index).index
+
+test_category.index
+
+#ANN....
+
+import tensorflow as tf
+import numpy as np
+import pandas as pd
+
+(x_train, y_train)=tf.expand_dims(train_x, axis=0),tf.expand_dims(train_y, axis=0)
+(x_test, y_test)=tf.expand_dims(test_x, axis=0),tf.expand_dims(test_y, axis=0)
+
+
+model = tf.keras.models.Sequential([
+  tf.keras.layers.Dense(55, activation='relu'),
+  tf.keras.layers.Dense(28, activation='relu'),
+  tf.keras.layers.Dense(15, activation='relu'),
+  tf.keras.layers.Dense(8, activation='relu'),
+  tf.keras.layers.Dense(1)
+])
+
+model.compile(optimizer='adam',
+              loss="mse",
+              metrics=["mae"])
+
+model.fit(x_train, y_train, epochs=500)
+
+
+x_test.shape
+
+y_test.shape
+
+model.evaluate(x_test, y_test)
